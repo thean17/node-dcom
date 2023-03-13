@@ -7,6 +7,8 @@ const Type2Message = require('./messages/type2message.js');
 const Type3Message = require('./messages/type3message.js');
 const os = require('os');
 const Responses = require('./responses.js');
+const NTLMKeyFactory = require('./ntlmkeyfactory.js');
+const Ntlm1 = require('./ntlm1.js');
 
 /**
  *  NTLM Authentication class
@@ -219,7 +221,7 @@ class NTLMAuthentication
       }
     }
     
-    if (this.useNtlm2sessionsecurity && (flags & NtlmFlags.NTLMSSP_NEGOTIATE_NTLM2) != 0) {
+    if (this.useNtlm2sessionsecurity && (flags & NtlmFlags.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY) != 0) {
       var ntlmKeyFactory = new NTLMKeyFactory();
       var userSessionKey;
 
@@ -238,18 +240,18 @@ class NTLMAuthentication
 
         try {
           userSessionKey = ntlmKeyFactory.getNTLM2SessionResponseUserSessionKey(
-            this.credentials.password(), this.credentials.password(),
-            servernonce);
+            this.credentials.password, servernonce);
         } catch (e) {
-          	throw new Error("Exception occured while forming Session Security for Type3Response ",e);
+          	throw new Error("Exception occured while forming Session Security for Type3Response " + e);
         }
 
         try {
+          // TODO: FIX THE ERROR OCCURED HERE
           var secondayMasterKey = ntlmKeyFactory.getSecondarySessionKey();
-					type3.setSessionKey(ntlmKeyFactory.encryptSecondarySessionKey(secondayMasterKey, userSessionKey));
+					type3.setEncryptedSessionKey(ntlmKeyFactory.encryptSecondarySessionKey(secondayMasterKey, userSessionKey));
           this.security = new Ntlm1(flags, secondayMasterKey,false);
         } catch (e) {
-        	throw new Error("Exception occured while forming Session Security for Type3Response",e);
+        	throw new Error("Exception occured while forming Session Security for Type3Response" + e);
         }
       }
     }
