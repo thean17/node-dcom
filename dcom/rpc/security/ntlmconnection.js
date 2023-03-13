@@ -7,7 +7,8 @@ var Security = require('../security.js');
 var Type1Message = require('./messages/type1message.js');
 var Type2Message = require('./messages/type2message.js');
 var Type3Message = require('./messages/type3message.js');
-
+var util = require('util');
+var debug = util.debuglog('dcom');
 
 var contextSerial = 0;
 /**
@@ -69,6 +70,7 @@ class NTLMConnection extends DefaultConnection
    */
   outgoingRebind(info, pduType)
   {
+    debug('outgoingRebind: ', {info,pduType,'this.ntlm':this.ntlm})
     if (this.ntlm == null) {
       this.contextId = ++contextSerial;
       this.ntlm = this.authentication.createType1(info.domain);
@@ -83,9 +85,21 @@ class NTLMConnection extends DefaultConnection
         this.setSecurity(this.authentication.getSecurity());
       }
     } else if (this.ntlm instanceof Type3Message) {
+        // from jinterop-ng
+        // int protectionLevel = ntlm.getFlag(NtlmFlags.NTLMSSP_NEGOTIATE_SEAL)
+        //         ? Security.PROTECTION_LEVEL_PRIVACY
+        //         : ntlm.getFlag(NtlmFlags.NTLMSSP_NEGOTIATE_SIGN)
+        //         ? Security.PROTECTION_LEVEL_INTEGRITY
+        //         : Security.PROTECTION_LEVEL_CONNECT;
+        // return new AuthenticationVerifier(
+        //         NtlmAuthentication.AUTHENTICATION_SERVICE_NTLM, protectionLevel,
+        //         contextId, ntlm.toByteArray());
+
+      const protectionLevel = new Security().PROTECTION_LEVEL_PRIVACY;
+
       if (pduType == 0x00) {
         return new AuthenticationVerifier(
-          new NTLMAuthentication(info).AUTHENTICATION_SERVICE_NTLM, new Security().PROTECTION_LEVEL_CONNECT,
+          new NTLMAuthentication(info).AUTHENTICATION_SERVICE_NTLM, protectionLevel,
           this.contextId, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
         } else if( pduType == 0x0e) {
           let auth = [0x4e, 0x54, 0x4c, 0x4d, 0x53, 0x53, 0x50, 0x00, 0x03, 0x00, 0x00, 0x00];
@@ -95,7 +109,7 @@ class NTLMConnection extends DefaultConnection
           let verifier = auth.concat(empty_body);
           verifier = verifier.concat(noKeysNoFlags);
           return new AuthenticationVerifier(
-            new NTLMAuthentication(info).AUTHENTICATION_SERVICE_NTLM, new Security().PROTECTION_LEVEL_CONNECT,
+            new NTLMAuthentication(info).AUTHENTICATION_SERVICE_NTLM, protectionLevel,
             this.contextId, verifier);
         }
     } else {

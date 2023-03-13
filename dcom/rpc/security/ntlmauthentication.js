@@ -32,25 +32,19 @@ class NTLMAuthentication
     this.seal;
     this.sign;
     this.keyExchange;
-    this.useNtlm2sessionsecurity = false;
+    
     this.useNtlmV2 = false;
     
     let user = domain.username;
     let password = domain.password;
     // FIXME: most of these came from properties and have these values by default
     this.lanManagerkey = false;
-    this.seal = false;
-    this.sign = false;
-    this.keyExchange = false;
+    this.seal = true;
+    this.sign = true;
+    this.useNtlm2sessionsecurity = true;
+    this.keyExchange = true;
 
-    const keyLength = 128;
-    if (keyLength != null) {
-      try {
-        this.keyLength = Number.parseInt(keyLength);
-      } catch (err) {
-        throw new Error('Invalid key length: ' + keyLength);
-      }
-    }
+    this.keyLength = 128;
 
     // this.useNtlm2sessionsecurity = true;
     // this.useNtlmV2 = true;
@@ -86,7 +80,7 @@ class NTLMAuthentication
 
     if (this.lanManagerkey) flags |= NtlmFlags.NTLMSSp_NEGOTIATE_LM_KEY;
     if (this.sign) flags |= NtlmFlags.NTLMSSP_NEGOTIATE_SIGN;
-    if (this.sign) flags |= NtlmFlags.NTLMSSP_NEGOTIATE_SEAL;
+    if (this.seal) flags |= NtlmFlags.NTLMSSP_NEGOTIATE_SEAL;
     if (this.keyExchange) flags |= NtlmFlags.NTLMSSP_NEGOTIATE_KEY_EXCH;
     if (this.keyLength >= 56) flags |= NtlmFlags.NTLMSSP_NEGOTIATE_56;
     if (this.keyLength >= 128) flags |= NtlmFlags.NTLMSSP_NEGOTIATE_128;

@@ -294,8 +294,11 @@ class ComServer extends Stub {
     var attachcomplete = false;
     
     this.syntax = "4d9f4ab8-7d1c-11cf-861e-0020af6e7c57:0.0";
+
+    debug("Attaching...");
     await this.attach(null, this.session.getGlobalSocketTimeout());
     attachcomplete = true;
+    debug("Attached");
 
     /* after attaching succesfully now we will call a rebindendpoint so that
       * we can authenticate before actually doing a remote activation
@@ -303,11 +306,16 @@ class ComServer extends Stub {
     let self = this;
     this.getEndpoint().getSyntax().setUUID(new UUID("4d9f4ab8-7d1c-11cf-861e-0020af6e7c57"));
     this.getEndpoint().getSyntax().setVersion(0,0);
+    
+    debug("Binding...");
     await this.getEndpoint().rebind(this.info);
+    debug("Bound");
 
     this.serverActivation = new RemActivation(this.clsid,["39c13a4d-011e-11d0-9675-0020afd8adb3"], this.comVersion);
     
+    debug("Activating...");
     await super.call(this.endpoint.IDEMPOTENT, this.serverActivation, this.info);
+    debug("Activated");
 
     if (attachcomplete && this.serverActivation.activationsuccessful) {
       try {
