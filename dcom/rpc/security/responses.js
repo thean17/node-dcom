@@ -280,7 +280,7 @@ class Responses
 
         let md5 = Crypto.createHmac('md5', '');
         md5.update(Buffer.from(content));
-        data = md5.digest();
+        data = [...md5.digest()];
 
         content = new Array(data.length + 64);
 
@@ -292,6 +292,7 @@ class Responses
         aux_i = 0;
         while (aux.length > 0) content.splice(aux_i++, 1, aux.shift());
 
+        md5 = Crypto.createHmac('md5', '');
         md5.update(Buffer.from(content));
         return md5.digest();
     }
