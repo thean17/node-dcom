@@ -304,10 +304,15 @@ class ComServer extends Stub {
       * we can authenticate before actually doing a remote activation
       */
     let self = this;
+    
+    //first send an AlterContext to the IID of the IOxidResolver
+    this.getEndpoint().getSyntax().setUUID(new UUID("99fcfec4-5260-101b-bbcb-00aa0021347a"));
+    this.getEndpoint().getSyntax().setVersion(0,0);
+    await this.getEndpoint().rebind(this.info);
+
+    this.syntax = "4d9f4ab8-7d1c-11cf-861e-0020af6e7c57:0.0";
     this.getEndpoint().getSyntax().setUUID(new UUID("4d9f4ab8-7d1c-11cf-861e-0020af6e7c57"));
     this.getEndpoint().getSyntax().setVersion(0,0);
-    
-    debug("Binding...");
     await this.getEndpoint().rebind(this.info);
     debug("Bound");
 
