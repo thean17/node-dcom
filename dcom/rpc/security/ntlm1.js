@@ -1,4 +1,8 @@
+var NTLMKeyFactory = require('./ntlmkeyfactory');
+var NtlmFlags = require('./ntlmflags');
 
+const PROTECTION_LEVEL_INTEGRITY = 5;
+const PROTECTION_LEVEL_PRIVACY = 6;
 
 class Ntlm1
 {
@@ -9,8 +13,9 @@ class Ntlm1
     this.keyFactory = new NTLMKeyFactory();
     this.isServer = isServer;
     this.protectionLevel = ((flags & NtlmFlags.NTLMSSP_NEGOTIATE_SEAL) != 0) ?
-      Security.PROTECTION_LEVEL_PRIVACY : Security.PROTECION_LEVEL_INTEGRITY;
+      PROTECTION_LEVEL_PRIVACY : PROTECTION_LEVEL_INTEGRITY;
 
+    // TODO: PORT THIS MISSING FUNCTIONS
     this.clientSigningKey = this.keyFactory.generateClientSigningKeyUsingNegotiatedSecondarySessionKey(sessionKey);
     var clientSealingKey = this.keyFactory.generateClientSealingKeyUsingNegotiatedSecondarySessionKey(sessionKey);
 
