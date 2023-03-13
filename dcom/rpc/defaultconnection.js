@@ -382,6 +382,7 @@ class DefaultConnection
         break;
       case new Auth3Pdu().AUTH3_TYPE:
         if (logMsg) {
+          debug("Received AUTH3");
           logMsg = false;
         }
         incomingRebind(detatchAuthentication2(buffer));
@@ -421,11 +422,6 @@ class DefaultConnection
           debug("Sending ALTER_CTX_RESP");
           logMsg = false;
         }
-      case (new RequestCoPdu().REQUEST_TYPE):
-        if (logMsg) {
-          debug("Sending REQUEST");
-          logMsg = false;
-        }       
         var verifier = this.outgoingRebind(info, pduType);
         if (verifier != null) this.attachAuthentication(verifier);
         break;
@@ -434,9 +430,14 @@ class DefaultConnection
           debug("Sending ALTER_CTX");
           logMsg = false;
         }
-        var verifier = this.outgoingRebind(info, pduType);
-        if (verifier != null) this.attachAuthentication(verifier);
         break;
+      case (new RequestCoPdu().REQUEST_TYPE):
+        if (logMsg) {
+          debug("Sending REQUEST");
+          logMsg = false;
+        }
+        // var verifier = this.outgoingRebind(info, pduType);
+        // if (verifier != null) this.attachAuthentication(verifier);
       case (new FaultCoPdu().FAULT_TYPE):
         if (logMsg){
           debug("Sending FAULT");
@@ -457,7 +458,7 @@ class DefaultConnection
           debug("Sending RESPONSE");
           logMsg = false;
         }
-        if (security != null) {
+        if (this.security != null) {
           this.signAndSeal(this.ndr);
         }
         break;
@@ -476,6 +477,7 @@ class DefaultConnection
 
   attachAuthentication(verifier)
   {
+    console.log('attachAuthentication')
     try{
       var buffer = this.ndr.getBuffer();
       var length = buffer.getLength();
