@@ -249,7 +249,7 @@ class NTLMAuthentication
           // TODO: FIX THE ERROR OCCURED HERE
           var secondayMasterKey = ntlmKeyFactory.getSecondarySessionKey();
 					type3.setEncryptedSessionKey(ntlmKeyFactory.encryptSecondarySessionKey(secondayMasterKey, userSessionKey));
-          this.security = new Ntlm1(flags, secondayMasterKey,false);
+          this.security = new Ntlm1(flags, secondayMasterKey, false);
         } catch (e) {
         	throw new Error("Exception occured while forming Session Security for Type3Response" + e);
         }
