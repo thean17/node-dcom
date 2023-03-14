@@ -18,6 +18,10 @@ const Events = require('events');
 const util = require('util');
 const debug = util.debuglog('dcom');
 
+const Security = {
+  PROTECTION_LEVEL_INTEGRITY: 5,
+}
+
 class DefaultConnection
 {
   constructor(transmitLength, receiveLength)
@@ -131,6 +135,12 @@ class DefaultConnection
     return fragment;
  }
 
+  /**
+   * 
+   * @param {RequestCoPdu} fragment 
+   * @param {} transport 
+   * @param {*} info 
+   */
   transmitFragment(fragment, transport, info)
   {
     this.transmitBuffer = new NdrBuffer(new Array(this.transmitLength), 0);
@@ -401,6 +411,7 @@ class DefaultConnection
     var logMsg = true;
 
     let pduType = this.ndr.readUnsignedSmall();
+    console.log('pduType: ', pduType)
     switch (pduType) {
       case (new BindPdu().BIND_TYPE):
         if (logMsg){
@@ -541,6 +552,11 @@ class DefaultConnection
     }
   }
 
+  /**
+   * 
+   * @param {NetworkDataRepresentation} ndr 
+   * @returns 
+   */
   signAndSeal(ndr)
   {
     var protectionLevel = this.security.getProtectionLevel();
@@ -553,34 +569,39 @@ class DefaultConnection
     var buffer = ndr.getBuffer();
     var length = buffer.getLength();
 
+    console.log('ConnectionOrientedPdu.FRAG_LENGTH_OFFSET: ', ConnectionOrientedPdu.FRAG_LENGTH_OFFSET);
+
     buffer.setIndex(length);
     verifier.encode(ndr, buffer);
     length = buffer.getLength();
-    buffer.setIndex(ConnectionOrientedPdu.FRAG_LENGTH_OFFSET);
+    buffer.setIndex(new ConnectionOrientedPdu().FRAG_LENGTH_OFFSET);
     ndr.writeUnsignedShort(length);
     ndr.writeUnsignedShort(verifierLength);
 
     var verifierIndex = length - verifierLength;
     length = length - verifierLength + 8;
 
-    var index = ConnectionOrientedPdu.HEADER_LENGTH;
-    buffer.setIndex(ConnectionOrientedPdu.TYPE_OFFSET);
-    switch (ndr.readUnsignedSmall()) {
-      case RequestCoPdu.REQUEST_TYPE:
+    var index = new ConnectionOrientedPdu().HEADER_LENGTH;
+    buffer.setIndex(new ConnectionOrientedPdu().TYPE_OFFSET);
+
+    const type = ndr.readUnsignedSmall();
+    console.log("Type: ", type);
+    switch (type) {
+      case new RequestCoPdu().REQUEST_TYPE:
         index += 8;
-        buffer.setIndex(connectionorientedpdu.FLAGS_OFFSET);
-        if ((ndr.readUnsignedSmall() & ConnectionOrientedPdu.PFC_OBJECT_UUID) != 0){
+        buffer.setIndex(new ConnectionOrientedPdu().FLAGS_OFFSET);
+        if ((type & new ConnectionOrientedPdu().PFC_OBJECT_UUID) != 0){
           index += 16;
         }
         break;
-      case FaultCoPdu.FAULT_TYPE:
+      case new FaultCoPdu().FAULT_TYPE:
         index += 16;
         break;
-      case ResponseCoPdu.RESPONSE_TYPE:
+      case new ResponseCoPdu().RESPONSE_TYPE:
         index += 8;
         break;
-      case CancelCoPdu.CANCEL_TYPE:
-      case OrphanedPdu.ORPHANED_TYPE:
+      case new CancelCoPdu().CANCEL_TYPE:
+      case new OrphanedPdu().ORPHANED_TYPE:
         index = length;
         break;
       default:
@@ -588,13 +609,15 @@ class DefaultConnection
     }
 
     var isFragmented = true;
-    buffer.setIndex(ConnectionOrientedPdu.FLAGS_OFFSET);
+    buffer.setIndex(new ConnectionOrientedPdu().FLAGS_OFFSET);
     var flags = ndr.readUnsignedSmall();
-    if ((flags & ConnectionOrientedPdu.PFC_FIRT_FRAG) == ConnectionOrientedPdu.PFC_FIRT_FRAG &&
-      (flags & ConnectionOrientedPdu.PFC_LAST_FRAG) == ConnectionOrientedPdu.PFC_LAST_FRAG) {
+    if ((flags & new ConnectionOrientedPdu().PFC_FIRST_FRAG) == new ConnectionOrientedPdu().PFC_FIRST_FRAG &&
+      (flags & new ConnectionOrientedPdu().PFC_LAST_FRAG) == new ConnectionOrientedPdu().PFC_LAST_FRAG) {
       isFragmented = false;
     }
     length = length - index;
+
+    console.log('processOutgoing');
     this.security.processOutgoing(ndr, index, length, verifierIndex, isFragmented);
   }
 
