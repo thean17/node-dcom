@@ -1,8 +1,17 @@
 var NTLMKeyFactory = require('./ntlmkeyfactory');
 var NtlmFlags = require('./ntlmflags');
+const NetworkDataRepresentation = require('../../ndr/networkdatarepresentation');
 
 const PROTECTION_LEVEL_INTEGRITY = 5;
 const PROTECTION_LEVEL_PRIVACY = 6;
+
+const NTLMAuthentication = {
+  AUTHENTICATION_SERVICE_NTLM: 10,
+}
+
+const Security = {
+  PROTECTION_LEVEL_PRIVACY: 6,
+}
 
 class Ntlm1
 {
@@ -22,8 +31,8 @@ class Ntlm1
     this.serverSigningKey = this.keyFactory.generateServerSigningKeyUsingNegotiatedSecondarySessionKey(sessionKey);
     var serverSealingKey = this.keyFactory.generateServerSealingKeyUsingNegotiatedSecondarySessionKey(sessionKey);
 
-    this.clientCipher = this.keyFactory.getARCFOUR(clientSealingKey);
-    this.serverCipehr = this.keyFactory.getARCFOUR(serverSealingKey);
+    this.clientCipher = this.keyFactory.getARCFOUR(Buffer.from(clientSealingKey));
+    this.serverCipehr = this.keyFactory.getARCFOUR(Buffer.from(serverSealingKey));
 
     this.requestCounter = 0;
     this.responseCounter = 0;
@@ -36,7 +45,7 @@ class Ntlm1
 
   getAuthenticationService()
   {
-    return new NTLMAuthentication().AUTHENTICATION_SERVICE_NTLM;
+    return NTLMAuthentication.AUTHENTICATION_SERVICE_NTLM;
   }
 
   getProtectionLevel()
@@ -92,42 +101,43 @@ class Ntlm1
     }
   }
 
+  /**
+   * 
+   * @param {NetworkDataRepresentation} ndr 
+   * @param {number} index 
+   * @param {number} length 
+   * @param {number} verifierIndex 
+   * @param {boolean} isFragmented 
+   */
   processOutgoing(ndr, index, length, verifierIndex, isFragmented)
   {
     try {
       var buffer = ndr.getBuffer();
 
       var signingKey = null;
-      var cipher = null;
 
       if (this.isServer) {
         signingKey = this.serverSigningKey;
-        cipher = this.serverCipehr;
       } else {
         signingKey = this.clientSigningKey;
-        cipher = this.clientCipher;
       }
 
       var verifier = this.keyFactory.signingPt1(this.requestCounter, signingKey,
         buffer.getBuffer(), verifierIndex);
-      var data = [];
-
-      var aux = data.slice(0, data.length);
-      var aux_i = index;
-      while (aux.length > 0) {
-        ndr.getBuffer().buf.splice(aux_i, 0, aux.shift());
-      }
+      var data = ndr.getBuffer().buf.slice(index, index + length);
 
       if (this.getProtectionLevel() == Security.PROTECTION_LEVEL_PRIVACY) {
-        var data2 = this.applyARC4(data, signingKey);
-        var aux = data2.slice(0, data2.length);
-        var aux_i = index;
-        while (aux.length > 0) {
-          ndr.getBuffer().buf.splice(aux_i, 0, aux.shift());
-        }
+        console.log("data: ", data)
+        var data2 = this.applyARC4(data, Buffer.from(signingKey));
+        console.log("data2: ", data2)
+
+        const previousIndex = buffer.getIndex();
+        buffer.setIndex(index);
+        buffer.writeOctetArray(data2, 0, data2.length);
+        buffer.setIndex(previousIndex);
       }
 
-      verifier = this.signingPt2(verifier, cipher);
+      verifier = this.signingPt2(Buffer.from(verifier), Buffer.from(signingKey));
       buffer.setIndex(verifierIndex);
       buffer.writeOctetArray(verifier, 0, verifier.length);
 
@@ -146,7 +156,7 @@ class Ntlm1
   /**
    * 
    * @param {Array<number>} verifier 
-   * @param {Crypto.Cipher} rc4 
+   * @param {Buffer} key
    */
   signingPt2(verifier, key) {
     const buffer = this.applyARC4(verifier.slice(4, 12), key);
