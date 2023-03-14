@@ -1,5 +1,6 @@
 var hexDump = require("./hexdump");
 var Format = require("./format.js");
+const NdrBuffer = require("./ndrbuffer");
 
 function NetworkDataRepresentation(){
   this.NDR_UUID = "8a885d04-1ceb-11c9-9fe8-08002b104860";
@@ -12,14 +13,25 @@ function NetworkDataRepresentation(){
   + this.NDR_MINOR_VERSION);
 
   this.ptr;
+  /**
+   * @type {NdrBuffer}
+   */
   this.buf;
   this.format;
 };
 
+/**
+ * 
+ * @param {NdrBuffer} buf 
+ */
 NetworkDataRepresentation.prototype.setBuffer = function (buf){
   this.buf = buf;
 }
 
+/**
+ * 
+ * @returns {NdrBuffer}
+ */
 NetworkDataRepresentation.prototype.getBuffer = function (){
   return this.buf;
 }
