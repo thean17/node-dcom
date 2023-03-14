@@ -1,3 +1,4 @@
+const NdrBuffer = require("../../ndr/ndrbuffer.js");
 var NetworkDataRepresentation = require("../../ndr/networkdatarepresentation.js");
 var Security = require("../security.js");
 
@@ -35,6 +36,11 @@ AuthenticationVerifier.prototype.decode = function (ndr, src) {
   src.index += this.body.length;
 };
 
+/**
+ * 
+ * @param {NetworkDataRepresentation} ndr 
+ * @param {NdrBuffer} dst 
+ */
 AuthenticationVerifier.prototype.encode = function (ndr, dst) {
   var padding = dst.align(4, 0);
   dst.enc_ndr_small(this.authenticationService);
