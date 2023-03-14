@@ -64,8 +64,99 @@ class NTLMKeyFactory
 
   getARCFOUR(key)
   {
-    var attrib = new HashMap();
-    var keystream;
+    return Crypto.createCipheriv('rc4', key, '' );
+  }
+
+  /**
+   * 
+   * @param {Array<number>} sessionKey 
+   */
+  generateClientSigningKeyUsingNegotiatedSecondarySessionKey(secondarySessionKey)
+  {
+    const dataforhash = [...secondarySessionKey, ...this.clientSigningMagicConstant];
+    
+    const byteArray = new Uint8Array(dataforhash);
+
+    const md5 = Crypto.createHash('md5');
+
+    return [...md5.update(byteArray).digest()]
+  }
+
+  /**
+   * 
+   * @param {Array<number>} sessionKey 
+   */
+  generateClientSealingKeyUsingNegotiatedSecondarySessionKey(secondarySessionKey)
+  {
+      const dataforhash = [...secondarySessionKey, this.clientSealingMagicConstant];
+
+      const byteArray = new Uint8Array(dataforhash);
+
+      const md5 = Crypto.createHash('md5');
+
+      return [...md5.update(byteArray).digest()]
+  }
+
+  /**
+   * 
+   * @param {Array<number>} sessionKey 
+   */
+  generateServerSigningKeyUsingNegotiatedSecondarySessionKey(secondarySessionKey)
+  {
+      const dataforhash = [...secondarySessionKey, this.serverSigningMagicConstant];
+
+      const byteArray = new Uint8Array(dataforhash);
+
+      const md5 = Crypto.createHash('md5');
+
+      return [...md5.update(byteArray).digest()]
+  }
+
+  /**
+   * 
+   * @param {Array<number>} sessionKey 
+   */
+  generateServerSealingKeyUsingNegotiatedSecondarySessionKey(secondarySessionKey)
+  {
+      const dataforhash = [...secondarySessionKey, this.serverSealingMagicConstant];
+
+      const byteArray = new Uint8Array(dataforhash);
+
+      const md5 = Crypto.createHash('md5');
+
+      return [...md5.update(byteArray).digest()]
+  }
+
+  /**
+   * 
+   * @param {number} sequenceNumber 
+   * @param {Array<number>} signingKey 
+   * @param {Array<number>} data
+   * @param {number} lengthOfBuffer 
+   * @returns 
+   */
+  signingPt1(sequenceNumber, signingKey, data) {
+    const seqNumPlusData = [
+      (sequenceNumber & 0xFF),
+      ((sequenceNumber >> 8) & 0xFF),
+      ((sequenceNumber >> 16) & 0xFF),
+      ((sequenceNumber >> 24) & 0xFF),
+      ...data
+    ];
+
+    const retval = [
+      0x01, //Version number LE 1.
+      0x0,
+      0x0,
+      0x0,
+      ...new Responses().hmacMD5(seqNumPlusData, signingKey), // System.arraycopy(sign, 0, retval, 4, 8);
+      (sequenceNumber & 0xFF),
+      ((sequenceNumber >> 8) & 0xFF),
+      ((sequenceNumber >> 16) & 0xFF),
+      ((sequenceNumber >> 24) & 0xFF)
+    ];
+
+    return retval;
   }
 }
 
