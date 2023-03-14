@@ -65,28 +65,28 @@ class Ntlm1
       data.concat(ndr.getBuffer().getBuffer().slice(index, data_length));
 
       if (this.getProtectionLevel() === Security.PROTECTION_LEVEL_PRIVACY) {
-        data = this.keyFactory.applyARCFOUR(cipher, data);
+        data = this.applyARC4(data, signingKey)
         var aux = data.slice(0, data.length);
         var aux_i = index;
         while (aux.length > 0) {
           ndr.getBuffer().buf.splice(aux_i, 0, aux.shift());
         }
-
-        var verifier = this.keyFactory.signingPt1(this.responseCounter, signingKey,
-          buffer.getBuffer(), verifierIndex);
-        this.keyFactory.signingPt2(verifier, cipher);
-
-        buffer.setIndex(verifierIndex);
-
-        var signing = [16];
-        ndr.readOctectArray(signing, 0, signing.length);
-
-        if (this.keyFactory.compareSignature(verifier, signing)) {
-           throw new Error("Message out of sequence. Perhaps the user being used to run this application is different from the one under which the COM server is running !.");
-        }
-
-        this.responseCounter++;
       }
+
+      var verifier = this.keyFactory.signingPt1(this.responseCounter, signingKey,
+        buffer.getBuffer());
+      this.keyFactory.signingPt2(verifier, cipher);
+
+      buffer.setIndex(verifierIndex);
+
+      var signing = [];
+      ndr.readOctectArray(signing, 0, signing.length);
+
+      if (this.keyFactory.compareSignature(verifier, signing)) {
+         throw new Error("Message out of sequence. Perhaps the user being used to run this application is different from the one under which the COM server is running !.");
+      }
+
+      this.responseCounter++;
     } catch (err) {
       throw new Error(err);
     }
@@ -110,7 +110,7 @@ class Ntlm1
 
       var verifier = this.keyFactory.signingPt1(this.requestCounter, signingKey,
         buffer.getBuffer(), verifierIndex);
-      var data = [length];
+      var data = [];
 
       var aux = data.slice(0, data.length);
       var aux_i = index;
@@ -119,7 +119,7 @@ class Ntlm1
       }
 
       if (this.getProtectionLevel() == Security.PROTECTION_LEVEL_PRIVACY) {
-        var data2 = this.keyFactory.applyARCFOUR(cipher, data);
+        var data2 = this.applyARC4(data, signingKey);
         var aux = data2.slice(0, data2.length);
         var aux_i = index;
         while (aux.length > 0) {
@@ -127,7 +127,7 @@ class Ntlm1
         }
       }
 
-      this.keyFactory.signingPt2(verifier, cipher);
+      verifier = this.signingPt2(verifier, cipher);
       buffer.setIndex(verifierIndex);
       buffer.writeOctetArray(verifier, 0, verifier.length);
 
@@ -135,6 +135,23 @@ class Ntlm1
     } catch (e) {
       throw new Error("General error: " + e);
     }
+  }
+
+  applyARC4(data, key) {
+    const cipher = this.keyFactory.getARCFOUR(key);
+
+    return [...cipher.update(data), ...cipher.final()];
+  }
+
+  /**
+   * 
+   * @param {Array<number>} verifier 
+   * @param {Crypto.Cipher} rc4 
+   */
+  signingPt2(verifier, key) {
+    const buffer = this.applyARC4(verifier.slice(4, 12), key);
+
+    return [...verifier.slice(4), ...buffer]
   }
 }
 
