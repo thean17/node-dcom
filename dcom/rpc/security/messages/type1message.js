@@ -108,7 +108,7 @@ class Type1Message extends NtlmMessage
         var aux = this.VERSION.slice(0, this.VERSION.length);
         var aux_i = pos;
         while (aux.length > 0)
-          type1.splice(aux_i++, 0, aux.shift());
+          type1.splice(aux_i++, 1, aux.shift());
         pos += this.VERSION.length;
       }
 
