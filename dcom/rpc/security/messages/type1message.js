@@ -30,8 +30,8 @@ class Type1Message extends NtlmMessage
   {
     return NtlmFlags.NTLMSSP_NEGOTIATE_NTLM
       | NtlmFlags.NTLMSSP_NEGOTIATE_VERSION
-      | unicode ? NtlmFlags.NTLMSSP_NEGOTIATE_UNICODE :
-        NtlmFlags.NTLMSSP_NEGOTIATE_OEM;
+      | (unicode ? NtlmFlags.NTLMSSP_NEGOTIATE_UNICODE :
+        NtlmFlags.NTLMSSP_NEGOTIATE_OEM);
   }
 
   getSuppliedDomain()
