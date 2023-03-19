@@ -579,7 +579,7 @@ class DefaultConnection
     ndr.writeUnsignedShort(verifierLength);
 
     var verifierIndex = length - verifierLength;
-    length = length - verifierLength + 8;
+    length = length - (verifierLength + 8);
 
     var index = new ConnectionOrientedPdu().HEADER_LENGTH;
     buffer.setIndex(new ConnectionOrientedPdu().TYPE_OFFSET);
