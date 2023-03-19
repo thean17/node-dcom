@@ -15,10 +15,37 @@ const HEX_DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 
 const NL = os.EOL;
 const NL_LENGTH = NL.length;
 
+/**
+ * 
+ * @param {Buffer} src 
+ * @param {number} srcIndex 
+ * @param {number} length 
+ * @returns 
+ */
 function hexdump(src, srcIndex, length){
-  if (length == 0){
-    return;
+  console.log('hexdump: ', {srcIndex,length})
+  if (!src) return;
+  if (length == 0) return;
+  if (srcIndex >= src.length) return;
+
+  let dump = "".padStart(50, "-");
+  dump += "\n";
+  for (let i = 0; i < length; i++)
+  {
+    dump += src[i + srcIndex].toString(16).padStart(2, '0') + " ";
+    if ((i + 1) % 16 === 0) {
+      dump += "\n"
+    } else if ((i + 1) % 8 === 0) {
+      dump += "\t";
+    }
   }
+  dump += "\n"
+  dump += "".padStart(50, "-");
+  dump += "\n"
+
+  console.log(dump);
+
+  return;
 
   var s = length % 16;
   var r = (s == 0) ? length/16 : length/16  + 1;
@@ -75,7 +102,7 @@ function hexdump(src, srcIndex, length){
 }
 
 function isISOControl (char){
-  var code = char.charCodeAt(0);
+  var code = `${char}`.charCodeAt(0);
   if (((code >= 0) && (code <= 31)) || ((code >= 127) && (code <= 159)))
     return true;
   return false;
