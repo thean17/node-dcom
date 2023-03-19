@@ -37,7 +37,7 @@ NetworkDataRepresentation.prototype.getBuffer = function (){
 }
 
 NetworkDataRepresentation.prototype.hexdump = function (count){
-  hexDump.hexdump(buf.buf, buf.index, count);
+  hexDump.hexdump(this.buf.buf, count ? this.buf.index : 0, count || this.buf.getLength());
 }
 
 NetworkDataRepresentation.prototype.readBoolean = function (){
