@@ -104,9 +104,9 @@ class Ntlm1
   /**
    * 
    * @param {NetworkDataRepresentation} ndr 
-   * @param {number} index 
-   * @param {number} length 
-   * @param {number} verifierIndex 
+   * @param {number} index Starting index of the Request payload
+   * @param {number} length Lenght of the Request payload
+   * @param {number} verifierIndex Starting index of Auth Info
    * @param {boolean} isFragmented 
    */
   processOutgoing(ndr, index, length, verifierIndex, isFragmented)
@@ -131,15 +131,11 @@ class Ntlm1
         var data2 = this.applyARC4(data, Buffer.from(signingKey));
         console.log("data2: ", data2)
 
-        const previousIndex = buffer.getIndex();
-        buffer.setIndex(index);
-        buffer.writeOctetArray(data2, 0, data2.length);
-        buffer.setIndex(previousIndex);
+        buffer.replace(data2, index, data2.length);
       }
 
       verifier = this.signingPt2(Buffer.from(verifier), Buffer.from(signingKey));
-      buffer.setIndex(verifierIndex);
-      buffer.writeOctetArray(verifier, 0, verifier.length);
+      buffer.replace(verifier, verifierIndex, verifier.length);
 
       this.requestCounter++;
     } catch (e) {
