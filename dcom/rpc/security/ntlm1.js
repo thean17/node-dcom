@@ -112,6 +112,13 @@ class Ntlm1
   processOutgoing(ndr, index, length, verifierIndex, isFragmented)
   {
     try {
+      console.group('Ntlm1.processOutgoing')
+      console.log({
+        index, 
+        length, 
+        verifierIndex, 
+        'ndr.length': ndr.getBuffer().getLength()
+      })
       var buffer = ndr.getBuffer();
 
       var signingKey = null;
@@ -124,20 +131,35 @@ class Ntlm1
 
       var verifier = this.keyFactory.signingPt1(this.requestCounter, signingKey,
         buffer.getBuffer(), verifierIndex);
+      console.log('after signingPt1');
+      buffer.hexdump();
       var data = ndr.getBuffer().buf.slice(index, index + length);
+      console.log('data.length: ', data.length);
 
       if (this.getProtectionLevel() == Security.PROTECTION_LEVEL_PRIVACY) {
-        console.log("data: ", data)
         var data2 = this.applyARC4(data, Buffer.from(signingKey));
-        console.log("data2: ", data2)
+
+        console.log('data2.length: ', data2.length);
 
         buffer.replace(data2, index, data2.length);
+        console.log('after applyARC4');
+        buffer.hexdump();
       }
 
+      console.log("verifier before signingPt2");
+      console.log(verifier)
+
       verifier = this.signingPt2(Buffer.from(verifier), Buffer.from(signingKey));
+
+      console.log("verifier after signingPt2");
+      console.log(verifier)
+
       buffer.replace(verifier, verifierIndex, verifier.length);
+      console.log('after signingPt2');
+      buffer.hexdump();
 
       this.requestCounter++;
+      console.groupEnd('processOutgoing')
     } catch (e) {
       throw new Error("General error: " + e);
     }
