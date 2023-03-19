@@ -1,6 +1,7 @@
 // @ts-check
 const HashMap = require('hashmap');
 const Encdec = require('./encdec.js');
+const { hexdump } = require('./hexdump.js');
 
 function NdrBuffer(buf, start){
   this.referent = undefined;
@@ -236,6 +237,15 @@ NdrBuffer.prototype.enc_ndr_referent = function (obj, type) {
 
 NdrBuffer.prototype.toString = function(){
   return String("start=" + this.start + ", index=" + this.index + ",length=" + this.getLength());
+}
+
+/**
+ * 
+ * @param {number} start
+ * @param {numer} count 
+ */
+NdrBuffer.prototype.hexdump = function (start, count) {
+  hexdump(this.buf, start || 0, count || this.getLength());
 }
 
 module.exports = NdrBuffer;
