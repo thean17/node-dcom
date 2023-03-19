@@ -88,6 +88,20 @@ NdrBuffer.prototype.writeOctetArray = function (b, i, l){
   this.advance(l);
 }
 
+/**
+ * 
+ * @param {Array<number>} buffer 
+ * @param {number} position 
+ * @param {number} length
+ */
+NdrBuffer.prototype.replace = function (buffer, position, length) {
+  const first = this.buf.slice(0, position);
+  const end = this.buf.slice(position + length);
+  const middle = Buffer.from(buffer.slice(0, length));
+  
+  this.buf = Buffer.concat([first, middle, end]);
+}
+
 NdrBuffer.prototype.readOctetArray = function (b, i, l){
   /*let temp = [...this.buf.slice(this.index, (this.index + l))];
   let temp_index= i;
