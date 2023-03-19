@@ -157,7 +157,7 @@ class Ntlm1
   signingPt2(verifier, key) {
     const buffer = this.applyARC4(verifier.slice(4, 12), key);
 
-    return [...verifier.slice(4), ...buffer]
+    return [...verifier.slice(0, 4), ...buffer]
   }
 }
 
