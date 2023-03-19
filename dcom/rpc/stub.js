@@ -8,6 +8,10 @@ class Stub extends Events.EventEmitter {
   constructor(){
     super();
     this.TransportFactory;
+
+    /**
+     * @type {Endpoint}
+     */
     this.endpoint; //needed since javascript types are so loosly threated
     this.object;
     this.address;
@@ -49,6 +53,10 @@ class Stub extends Events.EventEmitter {
     return this.endpoint;
   }
 
+  /**
+   * 
+   * @param {Endpoint} endpoint 
+   */
   setEndpoint(endpoint){
     this.endpoint = endpoint;
 

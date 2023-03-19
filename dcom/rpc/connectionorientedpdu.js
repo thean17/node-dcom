@@ -1,4 +1,5 @@
 var Format = require("../ndr/format.js");
+const NdrBuffer = require("../ndr/ndrbuffer.js");
 var NetworkDataRepresentation = require("../ndr/networkdatarepresentation.js");
 
 var callIdCounter = 0;
@@ -120,6 +121,11 @@ class ConnectionOrientedPdu {
     this.readPdu(ndr);
   }
 
+  /**
+   * 
+   * @param {NetworkDataRepresentation} ndr 
+   * @param {NdrBuffer} dst 
+   */
   encode(ndr, dst){
     ndr.setBuffer(dst);
     ndr.setFormat(this.getFormat());
@@ -140,6 +146,10 @@ class ConnectionOrientedPdu {
     this.readBody(ndr);
   }
 
+  /**
+   * 
+   * @param {NetworkDataRepresentation} ndr 
+   */
   writePdu(ndr){
     this.writeHeader(ndr);
     this.writeBody(ndr);

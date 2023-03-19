@@ -16,6 +16,10 @@ const ResponseCoPdu = require('./pdu/responsecopdu.js');
 const ShutdownPdu = require('./pdu/shutdownpdu.js');
 const Events = require('events');
 const util = require('util');
+const ConnectionOrientedEndpoint = require('../rpc/connectionorientedendpoint');
+// const NTLMConnection = require('./security/ntlmconnection')
+const NtlmMessage = require('./security/messages/ntlmmessage');
+const Ntlm1 = require('./security/ntlm1.js');
 const debug = util.debuglog('dcom');
 
 const Security = {
@@ -36,6 +40,10 @@ class DefaultConnection
     this.ndr = new NetworkDataRepresentation();
     this.transmitBuffer = new NdrBuffer(new Array(this.transmitLength), 0);
     this.receiveBuffer = new NdrBuffer(new Array(this.receiveLength), 0);
+
+    /**
+     * @type {Ntlm1}
+     */
     this.security;
     this.contextId;
     this.bytesRemainingInReceiveBuffer = false;
@@ -43,6 +51,14 @@ class DefaultConnection
     this.sendQueue = null;
   }
 
+  /**
+   * Called by {@link ConnectionOrientedEndpoint#send}
+   * 
+   * @param {ConnectionOrientedPdu} pdu 
+   * @param {*} transport 
+   * @param {{ domain: string, username: string, password: string }} info 
+   * @returns 
+   */
   transmit(pdu, transport, info)
   {
     if (!(pdu instanceof RequestCoPdu)){
@@ -84,12 +100,19 @@ class DefaultConnection
       fragment.setFlags(flags);
 
       // use the same callid for all fragment of this request
+      // j-interop-ng does not have this line
       fragment.setCallId(pdu.getCallId());
 
       this.transmitFragment(fragment, transport, info);
     }
   }
 
+  /**
+   * Called by {@link ConnectionOrientedEndpoint#receive}
+   * 
+   * @param {import('../transport/comtransport')} transport 
+   * @returns 
+   */
   async receive(transport)
   {
     var fragment = await this.receiveFragment(transport);
@@ -136,10 +159,11 @@ class DefaultConnection
  }
 
   /**
+   * Called by {@link DefaultConnection#transmit}
    * 
    * @param {RequestCoPdu} fragment 
-   * @param {} transport 
-   * @param {*} info 
+   * @param {import('../transport/comtransport')} transport 
+   * @param {{ domain: string, username: string, password: string }} info 
    */
   transmitFragment(fragment, transport, info)
   {
@@ -324,6 +348,12 @@ class DefaultConnection
     }
   }
 
+  /**
+   * Called by {@link DefaultConnection#receiveFragment}
+   * 
+   * @param {NdrBuffer} buffer 
+   * @returns 
+   */
   processIncoming(buffer)
   {
     buffer.setIndex(new ConnectionOrientedPdu().TYPE_OFFSET);
@@ -353,6 +383,9 @@ class DefaultConnection
 
         var verifier = this.detachAuthentication(buffer);
         if (verifier != null){
+          /**
+           * implementation at {@link NTLMConnection#incomingRebind}
+           */
           this.incomingRebind(verifier);
         }
         break;
@@ -405,6 +438,12 @@ class DefaultConnection
     }
   }
 
+  /**
+   * Called by {@link DefaultConnection#transmitFragment}
+   * 
+   * @param {{ domain: string, username: string, password: string }} info 
+   * @returns 
+   */
   processOutgoing(info)
   {
     this.ndr.getBuffer().setIndex((new ConnectionOrientedPdu).TYPE_OFFSET);
@@ -486,9 +525,12 @@ class DefaultConnection
     this.security = security;
   }
 
+  /**
+   * 
+   * @param {AuthenticationVerifier} verifier 
+   */
   attachAuthentication(verifier)
   {
-    console.log('attachAuthentication')
     try{
       var buffer = this.ndr.getBuffer();
       var length = buffer.getLength();
@@ -526,6 +568,11 @@ class DefaultConnection
     }
   }
 
+  /**
+   * 
+   * @param {NdrBuffer} buffer 
+   * @returns {AuthenticationVerifier}
+   */
   detachAuthentication(buffer)
   {
     try {
@@ -575,8 +622,8 @@ class DefaultConnection
     verifier.encode(ndr, buffer);
     length = buffer.getLength();
     buffer.setIndex(new ConnectionOrientedPdu().FRAG_LENGTH_OFFSET);
-    ndr.writeUnsignedShort(length);
-    ndr.writeUnsignedShort(verifierLength);
+    ndr.writeUnsignedShort(length); // Frag Length
+    ndr.writeUnsignedShort(verifierLength); // Auth Length
 
     var verifierIndex = length - verifierLength;
     length = length - (verifierLength + 8);
@@ -678,6 +725,12 @@ class DefaultConnection
     buffer.length = length;
   }
 
+  /**
+   * Implemented by {@link NTLMConnection#outgoingRebind}
+   * 
+   * @param {{ domain: string, username: string, password: string }} info
+   * @returns {NtlmMessage}
+   */
   outgoingRebind(info){};
 }
 

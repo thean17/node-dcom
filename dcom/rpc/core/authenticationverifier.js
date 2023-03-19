@@ -21,6 +21,11 @@ function AuthenticationVerifier(authenticationService, protectionLevel, contextI
   }
 }
 
+/**
+ * 
+ * @param {*} ndr 
+ * @param {NdrBuffer} src 
+ */
 AuthenticationVerifier.prototype.decode = function (ndr, src) {
   src.align(4);
   this.authenticationService = src.dec_ndr_small();

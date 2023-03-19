@@ -1,10 +1,12 @@
 const HashMap = require("hashmap");
 const RequestCoPdu = require('./pdu/requestcopdu.js');
+const Auth3Pdu = require('./pdu/auth3pdu');
 const NdrBuffer = require('../ndr/ndrbuffer.js');
 const NetworkDataRepresentation = require('../ndr/networkdatarepresentation.js');
 const ConnectionOrientedPdu = require('./connectionorientedpdu.js');
 const ResponseCoPdu = require('./pdu/responsecopdu.js');
 const FaultCoPdu = require('./pdu/faultCoPdu.js');
+const BindPdu = require('./pdu/bindPdu');
 const ShutdownPdu = require('./pdu/shutdownpdu.js');
 const PresentationSyntax = require('./core/presentationsyntax.js');
 const PresentationContext = require('./core/presentationcontext.js');
@@ -12,6 +14,7 @@ const BindAcknowledgePdu = require('./pdu/bindacknowledgepdu.js');
 const AlterContextResponsePdu = require('./pdu/altercontextresponsepdu.js');
 const BasicConnectionContext = require('./basicconnectioncontext.js');
 const NTLMConnectionContext = require('./security/ntlmconnectioncontext.js');
+const ComTransport = require('../transport/comtransport');
 const Events = require('events');
 
 /**
@@ -29,6 +32,11 @@ class ConnectionOrientedEndpoint extends Events.EventEmitter{
     this.MAYBE = 0x01;
     this.IDEMPOTENT = 0x02;
     this.BROADCAST = 0x04;
+
+    /**
+     * @type {ComTransport}
+     */
+    this.transport;
 
     this.CONNECTION_CONTEXT = "rpc.connectionContext";
     try {
@@ -63,6 +71,15 @@ class ConnectionOrientedEndpoint extends Events.EventEmitter{
     return this.syntax;
   }
 
+  /**
+   * 
+   * @param {*} semantics 
+   * @param {*} object 
+   * @param {*} opnum 
+   * @param {import('../ndr/ndrobject')} ndrobj 
+   * @param {{domain:string, username:string, password:string}} info 
+   * @returns 
+   */
   async call(semantics, object, opnum, ndrobj, info){
     await this.bind(info);
     let request = new RequestCoPdu();
@@ -109,6 +126,10 @@ class ConnectionOrientedEndpoint extends Events.EventEmitter{
     }
   }
 
+  /**
+   * 
+   * @param {{ domain: string, username: string, password: string }} info 
+   */
   async rebind(info){
     this.info = info;
     this.bound = false;
@@ -116,8 +137,11 @@ class ConnectionOrientedEndpoint extends Events.EventEmitter{
   }
 
   /**
+   * Perform binding to build security context
    *
-   * @param {Object} info
+   * {@see https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rpce/52d5d675-8d9c-4e02-b3fc-7c0eacf41838}
+   * 
+   * @param {{ domain: string, username: string, password: string }} info
    */
   async bind(info) {
     if (this.bound) return;
@@ -168,7 +192,15 @@ class ConnectionOrientedEndpoint extends Events.EventEmitter{
     }
   }
 
+  /**
+   * 
+   * @param {ConnectionOrientedPdu} request 
+   * @param {{ domain: string, username: string, password: string }} info
+   */
   async send(request, info){
+    /**
+     * bind will be skipped when this method is called by {@link ConnectionOrientedEndpoint#connect}
+     */
     await this.bind(this.info);
     this.context.getConnection().transmit(request, this.getTransport(), info);
   }
@@ -183,6 +215,11 @@ class ConnectionOrientedEndpoint extends Events.EventEmitter{
     await this.getTransport().close();
   }
 
+  /**
+   * This method will create security context {@link NTLMConnectionContext} before {@link ConnectionOrientedEndpoint#bind}
+   * 
+   * @param {{ domain: string, username: string, password: string }} info 
+   */
   async connect(info){
     this.bound = true;
     this.contextIdCounter = 0;
@@ -195,10 +232,17 @@ class ConnectionOrientedEndpoint extends Events.EventEmitter{
       info);
     this.contextIdToUse = this.contextIdCounter;
 
+    /** 
+     * send {@link BindPdu}
+     */
     if (pdu != null) await this.send(pdu, info);
     
     while (!this.context.isEstablished()){
       var received = await this.receive();
+
+      /**
+       * @type {Auth3Pdu}
+       */
       pdu = this.context.accept(received);
 
       if (pdu != null){

@@ -116,7 +116,7 @@ class RequestCoPdu extends ConnectionOrientedPdu {
    */
   writePdu(ndr){
     this.writeHeader(ndr);
-    this.writeBody(ndr);
+    this.writeBody(ndr);  // body has different allocation hint than j-interop-ng
     this.writeStub(ndr);
   }
 

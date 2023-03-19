@@ -7,6 +7,8 @@ var Security = require('../security.js');
 var Type1Message = require('./messages/type1message.js');
 var Type2Message = require('./messages/type2message.js');
 var Type3Message = require('./messages/type3message.js');
+var DefaultConnection = require('../defaultconnection');
+const NtlmMessage = require('../security/messages/ntlmmessage');
 var util = require('util');
 var debug = util.debuglog('dcom');
 
@@ -20,6 +22,10 @@ class NTLMConnection extends DefaultConnection
   {
     super();
     this.authentication = new NTLMAuthentication(info);
+
+    /**
+     * @type {NtlmMessage}
+     */
     this.ntlm;
   }
 
@@ -35,14 +41,22 @@ class NTLMConnection extends DefaultConnection
     this.receiveBuffer = new NdrBuffer([receiveLength]);
   }
 
+  /**
+   * Called by {@link DefaultConnection#processIncoming}
+   * 
+   * @param {import('../core/authenticationverifier')} verifier 
+   */
   incomingRebind(verifier)
-  {    
+  {
+    console.log('incomingRebind')
+    // TODO: Called by DefaultConnection.processIncoming
     switch (verifier.body[8]) {
       case 1:
         this.contextId = verifier.contextId;
         this.ntlm = new Type1Message(verifier.body);
         break;
       case 2:
+        console.log('NTLM Message Type: NTLMSSP_CHALLENGE (0x00000002)')
         this.ntlm = new Type2Message(verifier.body);
         break;
       case 3:
@@ -65,12 +79,12 @@ class NTLMConnection extends DefaultConnection
 
   /**
    * 
-   * @param {Object} info
+   * @param {{ domain: string, username: string, password: string }} info
    * @return {NtlmMessage}
    */
   outgoingRebind(info, pduType)
   {
-    debug('outgoingRebind: ', {info,pduType,'this.ntlm':this.ntlm})
+    // TODO: The following code perform handshake and exchange
     if (this.ntlm == null) {
       this.contextId = ++contextSerial;
       this.ntlm = this.authentication.createType1(info.domain);

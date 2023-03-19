@@ -1,5 +1,4 @@
 // @ts-check
-const Endpoint = require('../rpc/connectionorientedendpoint.js');
 const PresentationSyntax = require('../rpc/core/presentationsyntax.js');
 const os = require('os');
 const net = require('net');
@@ -157,6 +156,11 @@ class ComTransport extends events.EventEmitter
     }
   }
 
+  /**
+   * 
+   * @param {import('../ndr/ndrbuffer')} buffer 
+   * @returns 
+   */
   receive(buffer)
   {
     if (!this.attached) {

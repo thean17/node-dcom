@@ -1,3 +1,4 @@
+const NdrBuffer = require("./ndrbuffer.js");
 var NetworkDataRepresentation = require("./networkdatarepresentation.js");
 
 function NdrObject (){
@@ -13,6 +14,11 @@ NdrObject.prototype.getOpnum = function getOpnum(){
   return this.opnum;
 }
 
+/**
+ * 
+ * @param {NetworkDataRepresentation} ndr 
+ * @param {NdrBuffer} dst 
+ */
 NdrObject.prototype.encode = function (ndr, dst){
   ndr.buf = dst;
   this.write(ndr);
