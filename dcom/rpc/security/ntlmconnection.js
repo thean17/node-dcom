@@ -116,9 +116,18 @@ class NTLMConnection extends DefaultConnection
       throw new Error("Unrecognized NTLM message.");
     }
 
-    let protectionLevel = this.ntlm.getFlag(NTLMFlags.NTLMSSP_NEGOTIATE_SEAL) ?
-      new Security().PROTECTION_LEVEL_PRIVACY : this.ntlm.getFlag(NTLMFlags.NTLMSSP_NEGOTIATE_SIGN) ?
-                    new Security().PROTECTION_LEVEL_INTEGRITY : new Security().PROTECTION_LEVEL_CONNECT;
+    /**
+     * @type {number}
+     */
+    let protectionLevel;
+
+    if (this.ntlm.getFlag(NTLMFlags.NTLMSSP_NEGOTIATE_SEAL)) {
+      protectionLevel = new Security().PROTECTION_LEVEL_PRIVACY;
+    } else if (this.ntlm.getFlag(NTLMFlags.NTLMSSP_NEGOTIATE_SIGN)) {
+      protectionLevel = new Security().PROTECTION_LEVEL_INTEGRITY;
+    } else {
+      protectionLevel = new Security().PROTECTION_LEVEL_CONNECT; 
+    }
 
     return new AuthenticationVerifier(this.authentication.AUTHENTICATION_SERVICE_NTLM, protectionLevel,
       this.contextId, this.ntlm.toByteArray());
