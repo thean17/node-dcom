@@ -96,7 +96,7 @@ class RemActivation extends NdrObject {
 
     /**
      * 
-     * @param {NetworkDatarepresentation} ndr 
+     * @param {import('../ndr/networkdatarepresentation')} ndr 
      */
     write(ndr) {
         let oprcthis = new orpcThis(this.comVersion);
@@ -124,15 +124,33 @@ class RemActivation extends NdrObject {
         ndr.writeUnsignedLong(Number.parseInt(Buffer.from(objectHash({})).toString('hex').substr(0, 9)));
         ndr.writeUnsignedLong(this.interfaces.length);
 
-        //uuid.parse('00000000-0000-0000-c000-000000000046');
+        try {
+            //IID of IUnknown , this is hard coded here, standard way of COM is to first get a handle to the IUnknown
+            const uuid = new UUID();
+            uuid.parse("00000000-0000-0000-c000-000000000046");
+            uuid.encode(ndr, ndr.buf);
+        } catch (error) {
+            throw new Error(String('RemActivation - write - ' + error));
+        }
+
+        try {
+            //checking for IDispatch support
+            const uuid = new UUID();
+            uuid.parse("00020400-0000-0000-c000-000000000046");
+            uuid.encode(ndr, ndr.buf);
+        } catch (error) {
+            throw new Error(String('RemActivation - write - ' + error));
+        }
         
-        for (let i = 0; i < this.interfaces.length; i++) {
-            try {
-                this.interfaces[i].encode(ndr, ndr.buf);
-            } catch (error) {
-                throw new Error(String('RemActivation - write - ' + error));
-            }
-        };
+        // this following encoding lacking 16 more bytes compare to in j-interop-ng.JIRemActivation
+        // use the hardcoded version above to temporary fix it
+        // for (let i = 0; i < this.interfaces.length; i++) {
+        //     try {
+        //         this.interfaces[i].encode(ndr, ndr.buf);
+        //     } catch (error) {
+        //         throw new Error(String('RemActivation - write - ' + error));
+        //     }
+        // };
         ndr.writeUnsignedLong(1);
         ndr.writeUnsignedLong(1);
         ndr.writeUnsignedShort(7);
