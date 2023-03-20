@@ -88,7 +88,7 @@ class NTLMKeyFactory
    */
   generateClientSealingKeyUsingNegotiatedSecondarySessionKey(secondarySessionKey)
   {
-      const dataforhash = [...secondarySessionKey, this.clientSealingMagicConstant];
+      const dataforhash = [...secondarySessionKey, ...this.clientSealingMagicConstant];
 
       const byteArray = new Uint8Array(dataforhash);
 
@@ -103,7 +103,7 @@ class NTLMKeyFactory
    */
   generateServerSigningKeyUsingNegotiatedSecondarySessionKey(secondarySessionKey)
   {
-      const dataforhash = [...secondarySessionKey, this.serverSigningMagicConstant];
+      const dataforhash = [...secondarySessionKey, ...this.serverSigningMagicConstant];
 
       const byteArray = new Uint8Array(dataforhash);
 
