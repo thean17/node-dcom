@@ -135,13 +135,13 @@ class NTLMKeyFactory
    * @param {number} lengthOfBuffer 
    * @returns 
    */
-  signingPt1(sequenceNumber, signingKey, data) {
+  signingPt1(sequenceNumber, signingKey, data, lengthOfBuffer) {
     const seqNumPlusData = [
       (sequenceNumber & 0xFF),
       ((sequenceNumber >> 8) & 0xFF),
       ((sequenceNumber >> 16) & 0xFF),
       ((sequenceNumber >> 24) & 0xFF),
-      ...data
+      ...data.slice(0, lengthOfBuffer)
     ];
 
     const retval = [
@@ -149,7 +149,7 @@ class NTLMKeyFactory
       0x0,
       0x0,
       0x0,
-      ...new Responses().hmacMD5(seqNumPlusData, signingKey), // System.arraycopy(sign, 0, retval, 4, 8);
+      ...new Responses().hmacMD5(seqNumPlusData, signingKey).slice(0, 8), // System.arraycopy(sign, 0, retval, 4, 8);
       (sequenceNumber & 0xFF),
       ((sequenceNumber >> 8) & 0xFF),
       ((sequenceNumber >> 16) & 0xFF),
