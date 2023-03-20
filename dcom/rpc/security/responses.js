@@ -259,8 +259,8 @@ class Responses
         let opad = new Array(64);
 
         for (let index = 0; index < 64; index++) {
-            ipad[index] = (0x36 >> (8 * 0)) && 0xff;
-            opad[index] = (0x5c >> (8 * 0)) && 0xff
+            ipad[index] = 0x36;
+            opad[index] = 0x5c;
         }
 
         for (let index = key.length - 1; index >= 0; index--) {
@@ -268,31 +268,16 @@ class Responses
             opad[index] ^= key[index];
         }
 
-        let content = new Array(data.length + 64);
+        let content = [...ipad, ...data]
 
-        let aux = ipad.slice(0, 64);
-        let aux_i = 0;
-        while (aux.length > 0) content.splice(aux_i++, 1, aux.shift());
-
-        aux = data.slice(0, data.length);
-        aux_i = 64;
-        while (aux.length > 0) content.splice(aux_i++, 1, aux.shift());
-
-        let md5 = Crypto.createHmac('md5', '');
+        let md5 = Crypto.createHash('md5');
         md5.update(Buffer.from(content));
         data = [...md5.digest()];
 
         content = new Array(data.length + 64);
+        content = [...opad, ...data];
 
-        aux = opad.slice(0, 64);
-        aux_i = 0;
-        while (aux.length > 0) content.splice(aux_i++, 1, aux.shift());
-
-        aux = data.slice(0, data.length);
-        aux_i = 0;
-        while (aux.length > 0) content.splice(aux_i++, 1, aux.shift());
-
-        md5 = Crypto.createHmac('md5', '');
+        md5 = Crypto.createHash('md5');
         md5.update(Buffer.from(content));
         return md5.digest();
     }
