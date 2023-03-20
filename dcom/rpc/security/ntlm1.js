@@ -123,10 +123,17 @@ class Ntlm1
 
       var signingKey = null;
 
+      /**
+       * @type {import('crypto').Cipher}
+       */
+      var cipher = null;
+
       if (this.isServer) {
         signingKey = this.serverSigningKey;
+        cipher = this.serverCipehr;
       } else {
         signingKey = this.clientSigningKey;
+        cipher = this.clientCipher;
       }
 
       var verifier = this.keyFactory.signingPt1(this.requestCounter, signingKey,
@@ -137,7 +144,7 @@ class Ntlm1
       console.log('data.length: ', data.length);
 
       if (this.getProtectionLevel() == Security.PROTECTION_LEVEL_PRIVACY) {
-        var data2 = this.applyARC4(data, Buffer.from(signingKey));
+        var data2 = cipher.update(data);
 
         console.log('data2.length: ', data2.length);
 
@@ -149,7 +156,7 @@ class Ntlm1
       console.log("verifier before signingPt2");
       console.log(verifier)
 
-      verifier = this.signingPt2(Buffer.from(verifier), Buffer.from(signingKey));
+      verifier = this.signingPt2(Buffer.from(verifier), cipher);
 
       console.log("verifier after signingPt2");
       console.log(verifier)
@@ -174,10 +181,10 @@ class Ntlm1
   /**
    * 
    * @param {Array<number>} verifier 
-   * @param {Buffer} key
+   * @param {import('crypto').Cipher} cipher
    */
-  signingPt2(verifier, key) {
-    const buffer = this.applyARC4(verifier.slice(4, 12), key);
+  signingPt2(verifier, cipher) {
+    const buffer = cipher.update(verifier.slice(4, 12));
 
     return [...verifier.slice(0, 4), ...buffer]
   }
