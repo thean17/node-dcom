@@ -252,7 +252,16 @@ class ComServer extends Stub {
       address = addr;
     });
     this.info = {domain: session.domain, username: session.username, password: session.password};
-    address = "ncacn_ip_tcp:"+ address + "[135]";
+
+    const parts = address.split(':');
+    let port = '135';
+    if (parts.length === 2)
+    {
+      address = parts[0];
+      port = parts[1];
+    }
+
+    address = "ncacn_ip_tcp:"+ address + "[" + port + "]";
     await this.initialize(clsid, address, session);
     return 1;
   }
