@@ -186,7 +186,7 @@ class Ntlm1
   signingPt2(verifier, cipher) {
     const buffer = cipher.update(verifier.slice(4, 12));
 
-    return [...verifier.slice(0, 4), ...buffer]
+    return [...verifier.slice(0, 4), ...buffer, ...verifier.slice(12)]
   }
 }
 
